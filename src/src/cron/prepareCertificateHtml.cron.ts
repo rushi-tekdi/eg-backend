@@ -23,6 +23,50 @@ export class PrepareCertificateHtmlCron {
 		private method: Method,
 	) {}
 
+	crypto = require('crypto');
+
+	//cron issue certificate run every 5 minutes
+	@Cron(CronExpression.EVERY_10_SECONDS)
+	async testCron() {
+		console.log('test encryption cron job ' + new Date());
+		const aadhaar_no = '123456789012';
+		console.log('Text aadhaar_no ', aadhaar_no);
+		// Generate a 256-bit key (32 bytes)
+		const key = 'IGHFJ/NdqgRB26Klg3aJV8ItHw6u/985zJZUJRlVAq0=';
+		console.log('App Key ', key);
+		const enc_aadhaar_no = await this.encrypt(aadhaar_no, key);
+		console.log('Enc aadhaar_no ', enc_aadhaar_no);
+		const dec_aadhaar_no = await this.decrypt(enc_aadhaar_no, key);
+		console.log('Enc aadhaar_no ', dec_aadhaar_no);
+	}
+	//helper function
+	async decrypt(text, secretKey) {
+		const key = await Buffer.from(secretKey, 'base64');
+		const decipher = await this.crypto.createDecipheriv(
+			'aes-256-ecb',
+			key,
+			null,
+		);
+		const decrypted = await Buffer.concat([
+			decipher.update(Buffer.from(text, 'base64')),
+			decipher.final(),
+		]);
+		return decrypted.toString('utf8');
+	}
+	async encrypt(text, secretKey) {
+		const key = await Buffer.from(secretKey, 'base64');
+		const cipher = await this.crypto.createCipheriv(
+			'aes-256-ecb',
+			key,
+			null,
+		);
+		const encrypted = await Buffer.concat([
+			cipher.update(text, 'utf8'),
+			cipher.final(),
+		]);
+		return encrypted.toString('base64');
+	}
+
 	//cron issue certificate run every 5 minutes
 	@Cron(CronExpression.EVERY_5_MINUTES)
 	async prepareCertificateHtml() {
